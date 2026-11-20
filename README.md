@@ -17,8 +17,9 @@ flowchart LR
     G --> H[Deploy to Staging / Prod]
 ```
 
-Repository Structure
+## Repository Structure
 
+```text
 .
 ├── azure-devops/
 │   └── templates/
