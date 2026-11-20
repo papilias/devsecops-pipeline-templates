@@ -15,6 +15,7 @@ flowchart LR
     D -- Pass --> F[Generate SBOM<br/>SPDX]
     F --> G[Push to Registry]
     G --> H[Deploy to Staging / Prod]
+```
 
 Repository Structure
 
