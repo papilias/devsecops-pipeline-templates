@@ -29,11 +29,9 @@ flowchart LR
 └── .github/
     └── workflows/
         └── lint.yml                   # Automated YAML linting on every push/PR
+```
 
-Design Decisions
-
-Fail-Fast Security Gates: Builds fail automatically on CRITICAL vulnerabilities with available fixes (--ignore-unfixed), preventing known exploitable CVEs from reaching production while avoiding alert fatigue from unpatchable upstream issues.
-
-Template Centralization: Centralizing pipeline logic in reusable templates prevents copy-paste drift across microservices and allows rolling out compliance updates (e.g., new Trivy rules or SBOM formats) from a single repository.
-
-Registry-Agnostic: Templates accept registry credentials and image tags as parameters, supporting ACR, ECR, and GHCR without modifying core steps.
+## Design Decisions
+- **Fail-Fast Security Gates:** Builds fail automatically on `CRITICAL` vulnerabilities with available fixes (`--ignore-unfixed`), preventing known exploitable CVEs from reaching production while avoiding alert fatigue from unpatchable upstream issues.
+- **Template Centralization:** Centralizing pipeline logic in reusable templates prevents copy-paste drift across microservices and allows rolling out compliance updates (e.g., new Trivy rules or SBOM formats) from a single repository.
+- **Registry-Agnostic:** Templates accept registry credentials and image tags as parameters, supporting ACR, ECR, and GHCR without modifying core steps.
