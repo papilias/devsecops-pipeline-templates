@@ -1,0 +1,70 @@
+parameters:
+  - name: imageName
+    type: string
+  - name: dockerfilePath
+    type: string
+    default: "Dockerfile"
+  - name: buildContext
+    type: string
+    default: "."
+  - name: containerRegistryServiceConnection
+    type: string
+  - name: severityThreshold
+    type: string
+    default: "CRITICAL"
+  - name: failOnVulns
+    type: boolean
+    default: true
+
+jobs:
+  - job: BuildAndScan
+    displayName: "Docker Build, Trivy Scan & Push"
+    pool:
+      vmImage: "ubuntu-latest"
+    steps:
+      - checkout: self
+
+      - task: Docker@2
+        displayName: "Build Container Image"
+        inputs:
+          command: "build"
+          repository: "${{ parameters.imageName }}"
+          dockerfile: "${{ parameters.dockerfilePath }}"
+          buildContext: "${{ parameters.buildContext }}"
+          tags: |
+            $(Build.BuildId)
+
+      - script: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          EXIT_CODE=0
+          if [ "${{ parameters.failOnVulns }}" = "True" ]; then EXIT_CODE=1; fi
+
+          trivy image \
+            --severity ${{ parameters.severityThreshold }} \
+            --ignore-unfixed \
+            --exit-code $EXIT_CODE \
+            --format table \
+            ${{ parameters.imageName }}:$(Build.BuildId)
+        displayName: "Trivy Vulnerability Gate (${{ parameters.severityThreshold }})"
+
+      - script: |
+          trivy image \
+            --format spdx-json \
+            --output $(Build.ArtifactStagingDirectory)/sbom.spdx.json \
+            ${{ parameters.imageName }}:$(Build.BuildId)
+        displayName: "Generate SPDX SBOM"
+
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish SBOM Artifact"
+        inputs:
+          PathtoPublish: "$(Build.ArtifactStagingDirectory)/sbom.spdx.json"
+          ArtifactName: "sbom"
+
+      - task: Docker@2
+        displayName: "Push Verified Image to Registry"
+        inputs:
+          command: "push"
+          containerRegistry: "${{ parameters.containerRegistryServiceConnection }}"
+          repository: "${{ parameters.imageName }}"
+          tags: |
+            $(Build.BuildId)
